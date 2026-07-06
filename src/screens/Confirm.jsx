@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CheckCircle2, Boxes } from "lucide-react";
 import { TopBar } from "./Home";
 import { supabase } from "../supabaseClient";
 
@@ -12,6 +12,24 @@ export default function Confirm({ action, materiale, onBack }) {
   const [scatole, setScatole] = useState(materiale.pezzi_per_bancale || 0);
   const [numBancali, setNumBancali] = useState(1);
   const [stato, setStato] = useState("idle"); // idle | salvando | ok | errore
+  const [giacenza, setGiacenza] = useState(null); // null = ancora in caricamento
+  const [erroreGiacenza, setErroreGiacenza] = useState(false);
+
+  useEffect(() => {
+    let attivo = true;
+    async function caricaGiacenza() {
+      const { data, error } = await supabase
+        .from("vista_giacenza")
+        .select("scatole_in_giacenza, scatole_bloccate_qualita")
+        .eq("codice_materiale", materiale.codice_materiale)
+        .maybeSingle();
+      if (!attivo) return;
+      if (error) setErroreGiacenza(true);
+      else setGiacenza(data);
+    }
+    caricaGiacenza();
+    return () => { attivo = false; };
+  }, [materiale.codice_materiale]);
 
   async function confermaMovimento() {
     setStato("salvando");
@@ -84,6 +102,32 @@ export default function Confirm({ action, materiale, onBack }) {
           <Campo label="Codice materiale (SAP)" valore={materiale.codice_materiale} grande />
           <Campo label="Codice cliente" valore={materiale.codice_cliente} />
           <Campo label="Descrizione" valore={materiale.descrizione || "—"} />
+
+          <div style={{
+            display: "flex", alignItems: "center", gap: 12, marginTop: 4, marginBottom: 4,
+            background: "#F0F5F2", borderRadius: 12, padding: "12px 14px",
+          }}>
+            <Boxes size={22} color="#2E7D5B" />
+            <div>
+              <div style={{ fontSize: 12, color: "#5A6B73" }}>Giacenza attuale in magazzino</div>
+              {giacenza === null && !erroreGiacenza && (
+                <div style={{ fontSize: 15, color: "#8A9AA2" }}>Carico…</div>
+              )}
+              {erroreGiacenza && (
+                <div style={{ fontSize: 14, color: "#8A9AA2" }}>Non disponibile al momento</div>
+              )}
+              {giacenza && (
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#1C2B33" }}>
+                  {giacenza.scatole_in_giacenza} scatole
+                  {giacenza.scatole_bloccate_qualita > 0 && (
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#B23A3A", marginLeft: 8 }}>
+                      (di cui {giacenza.scatole_bloccate_qualita} bloccate qualità)
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
 
           <div style={{ fontSize: 13, color: "#5A6B73", margin: "14px 0 6px" }}>Scatole per bancale (modificabile)</div>
           <Contatore valore={scatole} onCambia={setScatole} />
