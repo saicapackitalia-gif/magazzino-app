@@ -1,0 +1,2 @@
+# magazzino-app
+Magazzino
