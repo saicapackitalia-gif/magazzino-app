@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Camera, Keyboard } from "lucide-react";
+import { Camera, Keyboard, ScanText } from "lucide-react";
 import { TopBar } from "./Home";
 import BarcodeScanner from "../components/BarcodeScanner";
 import RicercaManuale from "../components/RicercaManuale";
+import OcrScan from "../components/OcrScan";
 import { supabase } from "../supabaseClient";
 
 export default function Scan({ action, onTrovato, onBack }) {
-  const [modo, setModo] = useState("barcode"); // "barcode" | "manuale"
+  const [modo, setModo] = useState("barcode"); // "barcode" | "ocr" | "manuale"
   const [errore, setErrore] = useState("");
   const [cercandoCodice, setCercandoCodice] = useState(false);
 
@@ -40,6 +41,12 @@ export default function Scan({ action, onTrovato, onBack }) {
             <Camera size={18} /> Scansiona
           </button>
           <button
+            onClick={() => { setModo("ocr"); setErrore(""); }}
+            style={tabStyle(modo === "ocr")}
+          >
+            <ScanText size={18} /> Foto testo
+          </button>
+          <button
             onClick={() => { setModo("manuale"); setErrore(""); }}
             style={tabStyle(modo === "manuale")}
           >
@@ -47,7 +54,7 @@ export default function Scan({ action, onTrovato, onBack }) {
           </button>
         </div>
 
-        {modo === "barcode" ? (
+        {modo === "barcode" && (
           <>
             <BarcodeScanner
               onDetected={gestisciCodiceLetto}
@@ -63,9 +70,11 @@ export default function Scan({ action, onTrovato, onBack }) {
               </div>
             )}
           </>
-        ) : (
-          <RicercaManuale onSelezionato={onTrovato} />
         )}
+
+        {modo === "ocr" && <OcrScan onSelezionato={onTrovato} />}
+
+        {modo === "manuale" && <RicercaManuale onSelezionato={onTrovato} />}
       </div>
     </div>
   );

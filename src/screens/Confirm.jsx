@@ -16,6 +16,7 @@ export default function Confirm({ action, materiale, onBack }) {
   async function confermaMovimento() {
     setStato("salvando");
 
+    // 1. crea (o aggiorna) il bancale con lo stato corrispondente all'azione
     const statoBancale = {
       ingresso: "disponibile",
       uscita: "in_lavorazione",
@@ -38,6 +39,7 @@ export default function Confirm({ action, materiale, onBack }) {
       return;
     }
 
+    // 2. registra il movimento collegato
     const { error: erroreMovimento } = await supabase.from("movimenti").insert({
       bancale_id: bancale.id,
       tipo_movimento: action.tipoMovimento,
