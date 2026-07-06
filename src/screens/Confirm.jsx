@@ -16,7 +16,6 @@ export default function Confirm({ action, materiale, onBack }) {
   async function confermaMovimento() {
     setStato("salvando");
 
-    // 1. crea (o aggiorna) il bancale con lo stato corrispondente all'azione
     const statoBancale = {
       ingresso: "disponibile",
       uscita: "in_lavorazione",
@@ -39,7 +38,6 @@ export default function Confirm({ action, materiale, onBack }) {
       return;
     }
 
-    // 2. registra il movimento collegato
     const { error: erroreMovimento } = await supabase.from("movimenti").insert({
       bancale_id: bancale.id,
       tipo_movimento: action.tipoMovimento,
@@ -86,10 +84,10 @@ export default function Confirm({ action, materiale, onBack }) {
           <Campo label="Descrizione" valore={materiale.descrizione || "—"} />
 
           <div style={{ fontSize: 13, color: "#5A6B73", margin: "14px 0 6px" }}>Scatole per bancale (modificabile)</div>
-          <Contatore valore={scatole} onMeno={() => setScatole((v) => Math.max(0, v - 1))} onPiu={() => setScatole((v) => v + 1)} />
+          <Contatore valore={scatole} onCambia={setScatole} />
 
           <div style={{ fontSize: 13, color: "#5A6B73", margin: "18px 0 6px" }}>Numero bancali in questo movimento</div>
-          <Contatore valore={numBancali} onMeno={() => setNumBancali((v) => Math.max(1, v - 1))} onPiu={() => setNumBancali((v) => v + 1)} />
+          <Contatore valore={numBancali} onCambia={(v) => setNumBancali(Math.max(1, v))} />
         </div>
 
         {stato === "errore" && (
@@ -125,12 +123,26 @@ function Campo({ label, valore, grande }) {
   );
 }
 
-function Contatore({ valore, onMeno, onPiu }) {
+function Contatore({ valore, onCambia }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-      <button onClick={onMeno} style={numBtnStyle}>–</button>
-      <span style={{ fontSize: 24, fontWeight: 800, minWidth: 60, textAlign: "center" }}>{valore}</span>
-      <button onClick={onPiu} style={numBtnStyle}>+</button>
+      <button onClick={() => onCambia(Math.max(0, valore - 1))} style={numBtnStyle}>–</button>
+      <input
+        type="number"
+        inputMode="numeric"
+        value={valore}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v === "") { onCambia(0); return; }
+          const n = parseInt(v, 10);
+          if (!Number.isNaN(n)) onCambia(Math.max(0, n));
+        }}
+        style={{
+          fontSize: 24, fontWeight: 800, minWidth: 90, maxWidth: 110, textAlign: "center",
+          border: "2px solid #E1E6E8", borderRadius: 12, padding: "10px 6px",
+        }}
+      />
+      <button onClick={() => onCambia(valore + 1)} style={numBtnStyle}>+</button>
     </div>
   );
 }
