@@ -1,4 +1,4 @@
-import { Package, ArrowDownToLine, ArrowUpFromLine, AlertTriangle, RotateCcw, Search } from "lucide-react";
+import { Package, ArrowDownToLine, ArrowUpFromLine, AlertTriangle, RotateCcw, Search, BarChart3 } from "lucide-react";
 
 export const AZIONI = {
   ingresso: { key: "ingresso", label: "Entrata merce", icon: ArrowDownToLine, color: "#2E7D5B", desc: "Registra un bancale in arrivo", tipoMovimento: "ingresso" },
@@ -28,7 +28,7 @@ function BigButton({ item, onClick }) {
   );
 }
 
-export default function Home({ onSelectAction, onVediStorico }) {
+export default function Home({ onSelectAction, onVediStorico, onVediGiacenza }) {
   return (
     <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
       <div style={{ padding: "4px 4px 8px" }}>
@@ -41,9 +41,19 @@ export default function Home({ onSelectAction, onVediStorico }) {
         ))}
       </div>
       <button
+        onClick={onVediGiacenza}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+          padding: "16px", borderRadius: 16, border: "2px solid #E1E6E8", background: "#F7F9FA",
+          color: "#1C2B33", fontSize: 16, fontWeight: 600, cursor: "pointer",
+        }}
+      >
+        <BarChart3 size={20} /> Giacenza e report Excel
+      </button>
+      <button
         onClick={onVediStorico}
         style={{
-          marginTop: 6, display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
           padding: "16px", borderRadius: 16, border: "2px solid #E1E6E8", background: "#F7F9FA",
           color: "#1C2B33", fontSize: 16, fontWeight: 600, cursor: "pointer",
         }}

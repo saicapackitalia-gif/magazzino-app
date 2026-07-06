@@ -3,8 +3,9 @@ import Home, { TopBar } from "./screens/Home";
 import Scan from "./screens/Scan";
 import Confirm from "./screens/Confirm";
 import History from "./screens/History";
+import Giacenza from "./screens/Giacenza";
 
-const SCHERMATE = { HOME: "home", SCAN: "scan", CONFERMA: "conferma", STORICO: "storico" };
+const SCHERMATE = { HOME: "home", SCAN: "scan", CONFERMA: "conferma", STORICO: "storico", GIACENZA: "giacenza" };
 
 export default function App() {
   const [schermata, setSchermata] = useState(SCHERMATE.HOME);
@@ -25,6 +26,7 @@ export default function App() {
           <Home
             onSelectAction={(a) => { setAzione(a); setSchermata(SCHERMATE.SCAN); }}
             onVediStorico={() => setSchermata(SCHERMATE.STORICO)}
+            onVediGiacenza={() => setSchermata(SCHERMATE.GIACENZA)}
           />
         </>
       )}
@@ -39,6 +41,7 @@ export default function App() {
         <Confirm action={azione} materiale={materiale} onBack={vaiHome} />
       )}
       {schermata === SCHERMATE.STORICO && <History onBack={vaiHome} />}
+      {schermata === SCHERMATE.GIACENZA && <Giacenza onBack={vaiHome} />}
     </div>
   );
 }
