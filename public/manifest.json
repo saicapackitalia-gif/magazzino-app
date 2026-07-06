@@ -1,0 +1,9 @@
+{
+  "name": "Magazzino",
+  "short_name": "Magazzino",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F0F3F4",
+  "theme_color": "#1C2B33",
+  "icons": []
+}
