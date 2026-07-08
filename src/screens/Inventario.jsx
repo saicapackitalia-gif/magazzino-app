@@ -10,6 +10,7 @@ import { supabase } from "../supabaseClient";
 const PASSI = {
   RICERCA: "ricerca",
   LISTA_BANCALI: "lista_bancali",
+  AZIONI: "azioni",
   SCELTA_STIVA: "scelta_stiva",
   FATTO: "fatto",
 };
@@ -19,6 +20,7 @@ export default function Inventario({ magazzino, onBack }) {
   const [modoRicerca, setModoRicerca] = useState("barcode");
   const [materiale, setMateriale] = useState(null);
   const [bancaliTrovati, setBancaliTrovati] = useState([]);
+  const [gruppoAperto, setGruppoAperto] = useState(null); // stiva aperta nel dettaglio, se ce n'è più di una
   const [bancale, setBancale] = useState(null);
   const [ultimaAzione, setUltimaAzione] = useState(null);
   const [errore, setErrore] = useState("");
@@ -28,9 +30,15 @@ export default function Inventario({ magazzino, onBack }) {
     setPasso(PASSI.RICERCA);
     setMateriale(null);
     setBancaliTrovati([]);
+    setGruppoAperto(null);
     setBancale(null);
     setUltimaAzione(null);
     setErrore("");
+  }
+
+  function scegliBancale(b) {
+    setBancale(b);
+    setPasso(PASSI.AZIONI);
   }
 
   async function materialeTrovato(m) {
@@ -54,7 +62,7 @@ export default function Inventario({ magazzino, onBack }) {
     }
     setBancaliTrovati(data);
     if (data.length === 1) {
-      setBancale(data[0]);
+      scegliBancale(data[0]);
     } else {
       setPasso(PASSI.LISTA_BANCALI);
     }
@@ -128,25 +136,61 @@ export default function Inventario({ magazzino, onBack }) {
     );
   }
 
-  // ---------- SCHERMATA: LISTA BANCALI (se il materiale è in più stive/lotti) ----------
+  // ---------- SCHERMATA: LISTA BANCALI raggruppata per stiva (se il materiale è in più punti) ----------
   if (passo === PASSI.LISTA_BANCALI) {
+    const gruppi = {};
+    for (const b of bancaliTrovati) {
+      const chiave = b.ubicazione || "—";
+      if (!gruppi[chiave]) gruppi[chiave] = { ubicazione: chiave, bancali: [], totale: 0, totaleBloccato: 0 };
+      gruppi[chiave].bancali.push(b);
+      if (b.stato === "bloccato_qualita") gruppi[chiave].totaleBloccato += b.numero_pezzi;
+      else gruppi[chiave].totale += b.numero_pezzi;
+    }
+    const listaGruppi = Object.values(gruppi);
+
+    // Se un gruppo/stiva è stato aperto per vedere il dettaglio dei singoli bancali al suo interno
+    if (gruppoAperto) {
+      const bancaliDelGruppo = gruppi[gruppoAperto]?.bancali || [];
+      return (
+        <div>
+          <TopBar title={`Stiva ${gruppoAperto}`} onBack={() => setGruppoAperto(null)} />
+          <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ fontSize: 14, color: "#5A6B73" }}>Ci sono {bancaliDelGruppo.length} bancali distinti in questa stiva. Quale vuoi movimentare?</div>
+            {bancaliDelGruppo.map((b) => (
+              <button
+                key={b.id}
+                onClick={() => scegliBancale(b)}
+                style={{ textAlign: "left", background: "#fff", border: "1px solid #E1E6E8", borderRadius: 14, padding: "14px", cursor: "pointer" }}
+              >
+                <div style={{ fontWeight: 700, fontSize: 15, color: "#1C2B33" }}>Lotto {b.ordine_produzione || "—"}</div>
+                <div style={{ fontSize: 13, color: "#5A6B73" }}>
+                  {b.numero_pezzi} scatole
+                  {b.stato === "bloccato_qualita" && <span style={{ color: "#B23A3A", fontWeight: 700 }}> · BLOCCATO</span>}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div>
-        <TopBar title="Scegli il bancale" onBack={reset} />
+        <TopBar title="Scegli la stiva" onBack={reset} />
         <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ fontSize: 14, color: "#5A6B73" }}>
-            {materiale.codice_materiale} è presente in {bancaliTrovati.length} punti diversi. Quale vuoi movimentare?
+            {materiale.codice_materiale} è presente in {listaGruppi.length} stive diverse. Da quale vuoi movimentare?
           </div>
-          {bancaliTrovati.map((b) => (
+          {listaGruppi.map((g) => (
             <button
-              key={b.id}
-              onClick={() => setBancale(b)}
+              key={g.ubicazione}
+              onClick={() => (g.bancali.length === 1 ? scegliBancale(g.bancali[0]) : setGruppoAperto(g.ubicazione))}
               style={{ textAlign: "left", background: "#fff", border: "1px solid #E1E6E8", borderRadius: 14, padding: "14px", cursor: "pointer" }}
             >
-              <div style={{ fontWeight: 700, fontSize: 15, color: "#1C2B33" }}>Stiva {b.ubicazione || "—"}</div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: "#1C2B33" }}>Stiva {g.ubicazione}</div>
               <div style={{ fontSize: 13, color: "#5A6B73" }}>
-                Lotto {b.ordine_produzione || "—"} · {b.numero_pezzi} scatole
-                {b.stato === "bloccato_qualita" && <span style={{ color: "#B23A3A", fontWeight: 700 }}> · BLOCCATO</span>}
+                {g.bancali.length} {g.bancali.length === 1 ? "bancale" : "bancali"} · {g.totale + g.totaleBloccato} scatole totali
+                {g.totaleBloccato > 0 && <span style={{ color: "#B23A3A", fontWeight: 700 }}> (di cui {g.totaleBloccato} bloccate qualità)</span>}
               </div>
             </button>
           ))}
@@ -156,7 +200,7 @@ export default function Inventario({ magazzino, onBack }) {
   }
 
   // ---------- SCHERMATA: bancale selezionato -> azioni ----------
-  if (bancale) {
+  if (passo === PASSI.AZIONI && bancale) {
     return (
       <div>
         <TopBar title="Movimenta bancale" onBack={() => (bancaliTrovati.length > 1 ? setPasso(PASSI.LISTA_BANCALI) : reset())} />
