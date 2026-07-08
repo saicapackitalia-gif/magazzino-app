@@ -1,4 +1,4 @@
-import { Package, ArrowDownToLine, ArrowUpFromLine, AlertTriangle, RotateCcw, Search, BarChart3 } from "lucide-react";
+import { Package, ArrowDownToLine, ArrowUpFromLine, AlertTriangle, RotateCcw, Search, BarChart3, Warehouse } from "lucide-react";
 
 export const AZIONI = {
   ingresso: { key: "ingresso", label: "Entrata merce", icon: ArrowDownToLine, color: "#2E7D5B", desc: "Registra un bancale in arrivo", tipoMovimento: "ingresso" },
@@ -28,7 +28,7 @@ function BigButton({ item, onClick }) {
   );
 }
 
-export default function Home({ onSelectAction, onVediStorico, onVediGiacenza }) {
+export default function Home({ onSelectAction, onVediStorico, onVediGiacenza, onVediInventario }) {
   return (
     <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
       <div style={{ padding: "4px 4px 8px" }}>
@@ -40,6 +40,16 @@ export default function Home({ onSelectAction, onVediStorico, onVediGiacenza }) 
           <BigButton key={a.key} item={a} onClick={() => onSelectAction(a)} />
         ))}
       </div>
+      <button
+        onClick={onVediInventario}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+          padding: "16px", borderRadius: 16, border: "2px solid #E1E6E8", background: "#F7F9FA",
+          color: "#1C2B33", fontSize: 16, fontWeight: 600, cursor: "pointer",
+        }}
+      >
+        <Warehouse size={20} /> Inventario (sposta / macero)
+      </button>
       <button
         onClick={onVediGiacenza}
         style={{
