@@ -10,11 +10,18 @@ import { supabase } from "../supabaseClient";
 export default function SceltaMagazzino({ onScelto, onBack }) {
   const [magazzini, setMagazzini] = useState([]);
   const [caricando, setCaricando] = useState(true);
+  const [errore, setErrore] = useState("");
 
   useEffect(() => {
     async function carica() {
       const { data, error } = await supabase.from("magazzini").select("*").order("codice");
-      if (!error) setMagazzini(data || []);
+      if (error) {
+        setErrore("Non riesco a leggere i magazzini. Controlla di aver eseguito la query 'aggiungi-magazzini-ubicazioni.sql' su Supabase. Dettaglio: " + error.message);
+      } else if (!data || data.length === 0) {
+        setErrore("Nessun magazzino trovato nel database. Controlla di aver eseguito la query 'aggiungi-magazzini-ubicazioni.sql' su Supabase.");
+      } else {
+        setMagazzini(data);
+      }
       setCaricando(false);
     }
     carica();
@@ -28,6 +35,11 @@ export default function SceltaMagazzino({ onScelto, onBack }) {
           Su quale magazzino vuoi lavorare adesso?
         </p>
         {caricando && <div style={{ color: "#5A6B73" }}>Carico…</div>}
+        {errore && (
+          <div style={{ background: "#FBEAEA", color: "#B23A3A", padding: 14, borderRadius: 12, fontSize: 14 }}>
+            {errore}
+          </div>
+        )}
         {magazzini.map((m) => (
           <button
             key={m.codice}

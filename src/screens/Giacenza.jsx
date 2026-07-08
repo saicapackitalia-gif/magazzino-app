@@ -44,6 +44,33 @@ export default function Giacenza({ onBack }) {
         .select("*")
         .order("codice_materiale");
 
+      // Dettaglio per stiva: prendo tutti i bancali attualmente presenti (non macero, non annullati)
+      // e con posizione nota (magazzino/ubicazione), e li raggruppo per materiale + magazzino + stiva.
+      const { data: bancaliConPosizione } = await supabase
+        .from("bancali")
+        .select("codice_materiale, magazzino, ubicazione, numero_pezzi, stato")
+        .in("stato", ["disponibile", "bloccato_qualita"])
+        .not("magazzino", "is", null);
+
+      const raggruppati = {};
+      for (const b of bancaliConPosizione || []) {
+        const chiave = `${b.codice_materiale}__${b.magazzino}__${b.ubicazione}`;
+        if (!raggruppati[chiave]) {
+          raggruppati[chiave] = {
+            "Codice materiale": b.codice_materiale,
+            Magazzino: b.magazzino,
+            Stiva: b.ubicazione || "—",
+            "Scatole disponibili": 0,
+            "Scatole bloccate qualità": 0,
+          };
+        }
+        if (b.stato === "bloccato_qualita") raggruppati[chiave]["Scatole bloccate qualità"] += b.numero_pezzi;
+        else raggruppati[chiave]["Scatole disponibili"] += b.numero_pezzi;
+      }
+      const foglioPerStiva = Object.values(raggruppati).sort((a, b) =>
+        a["Codice materiale"].localeCompare(b["Codice materiale"]) || a.Magazzino.localeCompare(b.Magazzino)
+      );
+
       const foglioMovimenti = (movimenti || []).map((m) => ({
         Data: new Date(m.creato_il).toLocaleString("it-IT"),
         "Codice materiale": m.bancali?.codice_materiale || "",
@@ -65,6 +92,7 @@ export default function Giacenza({ onBack }) {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(foglioMovimenti), "Movimenti ultimi 7gg");
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(foglioGiacenza), "Giacenza attuale");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(foglioPerStiva), "Giacenza per stiva");
 
       const dataOggi = new Date().toISOString().slice(0, 10);
       XLSX.writeFile(wb, `report-magazzino-${dataOggi}.xlsx`);

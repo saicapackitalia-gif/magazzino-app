@@ -48,7 +48,7 @@ export default function Home({ onSelectAction, onVediStorico, onVediGiacenza, on
           color: "#1C2B33", fontSize: 16, fontWeight: 600, cursor: "pointer",
         }}
       >
-        <Warehouse size={20} /> Inventario (sposta / macero)
+        <Warehouse size={20} /> Inventario
       </button>
       <button
         onClick={onVediGiacenza}
