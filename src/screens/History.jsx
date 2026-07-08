@@ -8,6 +8,8 @@ const ETICHETTE = {
   rientro: { testo: "Rientro a magazzino", colore: "#2A5C8A" },
   blocco_qualita: { testo: "Blocco qualità", colore: "#B23A3A" },
   sblocco_qualita: { testo: "Sblocco qualità", colore: "#2E7D5B" },
+  spostamento: { testo: "Spostamento stiva", colore: "#2A5C8A" },
+  macero: { testo: "Macero", colore: "#8A9AA2" },
 };
 
 export default function History({ onBack }) {
